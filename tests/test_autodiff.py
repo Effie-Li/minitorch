@@ -72,6 +72,8 @@ def test_chain_rule3() -> None:
 
     back = y.chain_rule(d_output=5)
     back = list(back)
+    # Note: the constant actually doesn't get ignored bc apply() creates Scalar(10) 
+    # which has history=ScalarHistory() rather than None
     assert len(back) == 2
     variable, deriv = back[1]
     # assert variable.name == var.name
