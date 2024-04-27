@@ -3,6 +3,8 @@ from typing import Any, Iterable, List, Tuple
 
 from typing_extensions import Protocol
 
+from collections import deque, defaultdict
+
 # ## Task 1.1
 # Central Difference calculation
 
@@ -65,8 +67,22 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     Returns:
         Non-constant Variables in topological order starting from the right.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError('Need to implement for Task 1.4')
+
+    # vars that need derivatives computed first are before others
+    sorted_variables = deque()
+    visited = set()
+
+    def _traverse(variable: Variable) -> None:
+        if variable.unique_id in visited: return
+        visited.add(variable.unique_id)
+
+        for input_var in variable.history.inputs:
+            _traverse(input_var)
+        
+        sorted_variables.appendleft(variable)
+    
+    _traverse(variable)
+    return sorted_variables
 
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
@@ -80,8 +96,20 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
 
     No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError('Need to implement for Task 1.4')
+    sorted_variables = topological_sort(variable)
+    states = defaultdict(int) # intermediate scalars : cumulative gradient from later in the graph
+    states[variable.unique_id] += deriv
+    
+    for var in sorted_variables:
+        if var.is_leaf(): # we would have accumulated the derivs for leaf vars below
+            continue
+        grad_from_later = states[var.unique_id]
+        grads_for_inputs = var.chain_rule(grad_from_later)
+        for (input_var, d) in grads_for_inputs:
+            if input_var.is_leaf():
+                input_var.accumulate_derivative(d)
+            else:
+                states[input_var.unique_id] += d
 
 
 @dataclass

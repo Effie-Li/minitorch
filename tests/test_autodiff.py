@@ -104,6 +104,21 @@ def test_chain_rule4() -> None:
 
 
 @pytest.mark.task1_4
+def test_toposort_and_backprop_custom() -> None:
+    # (2 + 3) + (2 * 3 + 2)
+    x = minitorch.Scalar(2)
+    y = minitorch.Scalar(3)
+    z1 = x + y
+    z2 = x * y + x
+    h = z1 + z2
+    sorted_vars = minitorch.autodiff.topological_sort(h)
+    assert sorted_vars[0] == 13
+    h.backward(d_output=1)
+    assert x.derivative == 5.0
+    assert y.derivative == 3.0
+
+
+@pytest.mark.task1_4
 def test_backprop1() -> None:
     # Example 1: F1(0, v)
     var = minitorch.Scalar(0)
